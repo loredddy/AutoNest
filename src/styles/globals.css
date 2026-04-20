@@ -1,0 +1,259 @@
+/* ═══════════════════════════════════════════════
+   AUTONEST — GLOBAL STYLES & RETRO THEME
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=VT323&family=IBM+Plex+Mono:wght@400;500;700&family=Barlow+Condensed:wght@400;600;700;900&display=swap');
+
+/* ── CSS VARIABLES ── */
+:root {
+  /* Core Palette */
+  --bg-primary: #0d0d0d;
+  --bg-secondary: #141414;
+  --bg-card: #1a1a1a;
+  --bg-card-hover: #202020;
+
+  /* Accent Colors */
+  --accent-amber: #f59e0b;
+  --accent-red: #dc2626;
+  --accent-green: #16a34a;
+  --accent-blue: #1d4ed8;
+  --accent-chrome: #c0c0c0;
+
+  /* Retro Neon */
+  --neon-amber: #ffb800;
+  --neon-red: #ff2222;
+  --neon-green: #00ff88;
+
+  /* Typography */
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-mono: 'VT323', monospace;
+  --font-body: 'Barlow Condensed', sans-serif;
+  --font-code: 'IBM Plex Mono', monospace;
+
+  /* Text */
+  --text-primary: #f0ece4;
+  --text-secondary: #a09a8e;
+  --text-muted: #5a5550;
+  --text-accent: var(--neon-amber);
+
+  /* Borders */
+  --border-color: #2a2a2a;
+  --border-accent: var(--neon-amber);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --header-height: 64px;
+  --content-max: 1400px;
+
+  /* Effects */
+  --glow-amber: 0 0 20px rgba(255, 184, 0, 0.3);
+  --glow-red: 0 0 20px rgba(255, 34, 34, 0.3);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --scanline-opacity: 0.03;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-med: 0.25s ease;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay effect */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── TYPOGRAPHY ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+p { line-height: 1.6; }
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover { color: var(--text-primary); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neon-amber); }
+
+/* ── UTILITY CLASSES ── */
+.mono { font-family: var(--font-mono); font-size: 1.1em; }
+.code { font-family: var(--font-code); }
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(255, 184, 0, 0.1);
+  border: 1px solid var(--neon-amber);
+  color: var(--neon-amber);
+  font-family: var(--font-code);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tag--red {
+  background: rgba(255, 34, 34, 0.1);
+  border-color: var(--neon-red);
+  color: var(--neon-red);
+}
+
+.tag--green {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 1rem 0;
+}
+
+/* ── CARD BASE ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: border-color var(--transition-med), background var(--transition-med);
+}
+.card:hover {
+  border-color: rgba(255, 184, 0, 0.3);
+  background: var(--bg-card-hover);
+}
+
+/* ── BUTTON BASE ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-fast);
+}
+
+.btn--primary {
+  background: var(--neon-amber);
+  color: #000;
+}
+.btn--primary:hover {
+  background: #fff;
+  box-shadow: var(--glow-amber);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+.btn--ghost:hover {
+  border-color: var(--neon-amber);
+  color: var(--neon-amber);
+}
+
+/* ── LIVE BADGE ── */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: var(--neon-red);
+  color: #fff;
+  font-family: var(--font-code);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.live-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse-live 1s infinite;
+}
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.section-header .section-number {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  color: var(--neon-amber);
+  letter-spacing: 0.15em;
+}
+
+/* ── RETRO TICKER ── */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ── GRID LAYOUTS ── */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+@media (max-width: 1024px) {
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
