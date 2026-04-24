@@ -2,7 +2,7 @@
 // Vercel Serverless Function — runs on Vercel's servers
 // Keeps GROQ_API_KEY secret from the browser
 
-const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_API = "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";
 const MODEL = "llama3-8b-8192";
 
 export default async function handler(req, res) {

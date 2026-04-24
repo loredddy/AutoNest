@@ -36,12 +36,13 @@ function HostCard({ host, selected, onClick }) {
 
 // ── CHAT BUBBLE WITH INLINE REPLY ─────────────
 function ChatBubble({ message, onReplyTo, replyTarget, loading, selectedHosts, topic, onReplySubmit }) {
+  const [replyText, setReplyText] = useState("");
+
   const host = HOSTS[message.host];
   if (!host) return null;
 
   const isRight = host.side === "right";
   const isReplyOpen = replyTarget === message.id;
-  
 
   const handleSubmit = () => {
     if (!replyText.trim()) return;
