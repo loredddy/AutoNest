@@ -41,7 +41,7 @@ function ChatBubble({ message, onReplyTo, replyTarget, loading, selectedHosts, t
 
   const isRight = host.side === "right";
   const isReplyOpen = replyTarget === message.id;
-  const [replyText, setReplyText] = useState("");
+  
 
   const handleSubmit = () => {
     if (!replyText.trim()) return;
