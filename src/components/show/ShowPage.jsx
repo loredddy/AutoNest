@@ -1,6 +1,7 @@
 // ── ShowPage.jsx — The Garage ─────────────────
 import React, { useState, useRef, useEffect } from "react";
 import { HOSTS, startShowSegment, continueShow, answerViewerQuestion, generateShowTopics } from "../../agents/showAgents";
+import { callOllama } from "../../agents/ollamaAgent";
 import "./ShowPage.css";
 
 const DEFAULT_TOPICS = [
@@ -12,6 +13,7 @@ const DEFAULT_TOPICS = [
   { id: 6, title: "Which is better: Top Gear or Throttle House?", category: "Debate", controversy: 5 },
 ];
 
+// ── HOST SELECTION CARD ───────────────────────
 function HostCard({ host, selected, onClick }) {
   return (
     <div
@@ -32,31 +34,94 @@ function HostCard({ host, selected, onClick }) {
   );
 }
 
-function ChatBubble({ message }) {
+// ── CHAT BUBBLE WITH INLINE REPLY ─────────────
+function ChatBubble({ message, onReplyTo, replyTarget, loading, selectedHosts, topic, onReplySubmit }) {
   const host = HOSTS[message.host];
   if (!host) return null;
+
   const isRight = host.side === "right";
+  const isReplyOpen = replyTarget === message.id;
+  const [replyText, setReplyText] = useState("");
+
+  const handleSubmit = () => {
+    if (!replyText.trim()) return;
+    onReplySubmit({ text: replyText.trim(), targetHostId: message.host, messageId: message.id });
+    setReplyText("");
+  };
 
   return (
-    <div className={`chat-bubble chat-bubble--${isRight ? "right" : "left"}`}>
-      <div className="chat-bubble__avatar" style={{ borderColor: host.color }}>
-        {host.avatar}
-      </div>
-      <div className="chat-bubble__content">
-        <div className="chat-bubble__meta">
-          <span className="chat-bubble__name" style={{ color: host.color }}>{host.name}</span>
-          <span className="chat-bubble__show">{host.show}</span>
+    <div className={`chat-bubble-wrapper chat-bubble-wrapper--${isRight ? "right" : "left"}`}>
+      {/* Main bubble */}
+      <div className={`chat-bubble chat-bubble--${isRight ? "right" : "left"}`}>
+        <div className="chat-bubble__avatar" style={{ borderColor: host.color }}>
+          {host.avatar}
         </div>
-        <div className="chat-bubble__text" style={{ borderLeftColor: isRight ? "transparent" : host.color, borderRightColor: isRight ? host.color : "transparent" }}>
-          {message.text}
+        <div className="chat-bubble__content">
+          <div className="chat-bubble__meta">
+            <span className="chat-bubble__name" style={{ color: host.color }}>{host.name}</span>
+            <span className="chat-bubble__show">{host.show}</span>
+          </div>
+          <div
+            className="chat-bubble__text"
+            style={{
+              borderLeftColor: isRight ? "transparent" : host.color,
+              borderRightColor: isRight ? host.color : "transparent"
+            }}
+          >
+            {message.text}
+          </div>
+
+          {/* Reply button under each message */}
+          <button
+            className={`bubble-reply-btn ${isReplyOpen ? "bubble-reply-btn--active" : ""}`}
+            style={{ alignSelf: isRight ? "flex-end" : "flex-start", color: host.color }}
+            onClick={() => onReplyTo(isReplyOpen ? null : message.id)}
+            disabled={loading}
+          >
+            ↩ Reply to {host.name.split(" ")[0]}
+          </button>
         </div>
       </div>
+
+      {/* Inline reply box — appears under the bubble when open */}
+      {isReplyOpen && (
+        <div className={`inline-reply inline-reply--${isRight ? "right" : "left"}`}
+          style={{ borderColor: `${host.color}55` }}
+        >
+          <div className="inline-reply__tag" style={{ color: host.color }}>
+            ↩ Replying to {host.name}
+          </div>
+          <div className="inline-reply__input-row">
+            <input
+              className="viewer-input inline-reply__input"
+              placeholder={`Counter ${host.name.split(" ")[0]}'s take...`}
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              autoFocus
+              disabled={loading}
+            />
+            <button
+              className="btn btn--primary"
+              style={{ background: host.color, color: "#000" }}
+              onClick={handleSubmit}
+              disabled={loading || !replyText.trim()}
+            >
+              SEND
+            </button>
+            <button className="btn btn--ghost" onClick={() => onReplyTo(null)} disabled={loading}>
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+// ── MAIN SHOW PAGE ────────────────────────────
 export default function ShowPage() {
-  const [step, setStep] = useState("select-hosts"); // select-hosts | select-topic | live
+  const [step, setStep] = useState("select-hosts");
   const [selectedHosts, setSelectedHosts] = useState([]);
   const [topics, setTopics] = useState(DEFAULT_TOPICS);
   const [activeTopic, setActiveTopic] = useState(null);
@@ -64,12 +129,19 @@ export default function ShowPage() {
   const [loading, setLoading] = useState(false);
   const [viewerInput, setViewerInput] = useState("");
   const [loadingTopics, setLoadingTopics] = useState(false);
-  const [ollamaError, setOllamaError] = useState(null);
+  const [agentError, setAgentError] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null); // message.id being replied to
   const chatRef = useRef(null);
+  const msgCounter = useRef(0);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [conversation]);
+
+  const addMsg = (msg) => {
+    msgCounter.current += 1;
+    return { ...msg, id: msgCounter.current };
+  };
 
   const toggleHost = (hostId) => {
     setSelectedHosts(prev => {
@@ -79,22 +151,20 @@ export default function ShowPage() {
     });
   };
 
-  const goToTopics = () => {
-    if (selectedHosts.length === 2) setStep("select-topic");
-  };
-
   const goOnAir = async (topic) => {
     setActiveTopic(topic);
     setConversation([]);
     setStep("live");
     setLoading(true);
-    setOllamaError(null);
+    setAgentError(null);
+    setReplyTarget(null);
+    msgCounter.current = 0;
     try {
       const opening = await startShowSegment(topic.title, selectedHosts[0], selectedHosts[1]);
-      setConversation(opening);
+      setConversation(opening.map(m => addMsg(m)));
     } catch (e) {
-      setOllamaError(e.message.includes("fetch") || e.message.includes("localhost")
-        ? "Cannot connect to Ollama. Make sure it's running: open a terminal and type 'ollama serve'"
+      setAgentError(e.message.includes("fetch") || e.message.includes("localhost")
+        ? "Cannot connect. Make sure Ollama is running: 'ollama serve'"
         : e.message);
     } finally {
       setLoading(false);
@@ -104,6 +174,7 @@ export default function ShowPage() {
   const handleContinue = async () => {
     if (loading || !activeTopic) return;
     setLoading(true);
+    setReplyTarget(null);
     try {
       const next = await continueShow({
         topic: activeTopic.title,
@@ -111,19 +182,21 @@ export default function ShowPage() {
         host1Id: selectedHosts[0],
         host2Id: selectedHosts[1],
       });
-      setConversation(prev => [...prev, next]);
+      setConversation(prev => [...prev, addMsg(next)]);
     } catch (e) {
-      setOllamaError(e.message);
+      setAgentError(e.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleViewerQuestion = async () => {
+  // General question to both hosts
+  const handleGeneralQuestion = async () => {
     if (!viewerInput.trim() || loading) return;
     const q = viewerInput.trim();
     setViewerInput("");
-    setConversation(prev => [...prev, { host: "viewer", text: q }]);
+    setReplyTarget(null);
+    setConversation(prev => [...prev, addMsg({ host: "viewer", text: q, targetHost: "both" })]);
     setLoading(true);
     try {
       const answers = await answerViewerQuestion({
@@ -133,9 +206,36 @@ export default function ShowPage() {
         host1Id: selectedHosts[0],
         host2Id: selectedHosts[1],
       });
-      setConversation(prev => [...prev, ...answers]);
+      setConversation(prev => [...prev, ...answers.map(a => addMsg(a))]);
     } catch (e) {
-      setOllamaError(e.message);
+      setAgentError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Direct reply to a specific host
+  const handleDirectReply = async ({ text, targetHostId }) => {
+    setReplyTarget(null);
+    setConversation(prev => [...prev, addMsg({ host: "viewer", text, targetHost: targetHostId })]);
+    setLoading(true);
+    try {
+      const host = HOSTS[targetHostId];
+      const historyText = conversation
+        .slice(-6)
+        .filter(m => m.host !== "viewer")
+        .map(m => `${HOSTS[m.host]?.name || m.host}: ${m.text}`)
+        .join("\n\n");
+
+      const response = await callOllama({
+        system: host.system,
+        user: `Topic: "${activeTopic.title}"\nConversation so far:\n${historyText}\n\nA viewer just replied directly to YOU saying: "${text}"\nRespond directly to them — in character, 1-2 sentences, punchy.`,
+        maxTokens: 120,
+      });
+
+      setConversation(prev => [...prev, addMsg({ host: targetHostId, text: response })]);
+    } catch (e) {
+      setAgentError(e.message);
     } finally {
       setLoading(false);
     }
@@ -147,7 +247,7 @@ export default function ShowPage() {
       const newTopics = await generateShowTopics();
       setTopics(newTopics);
     } catch (e) {
-      setOllamaError(e.message);
+      setAgentError(e.message);
     } finally {
       setLoadingTopics(false);
     }
@@ -155,14 +255,13 @@ export default function ShowPage() {
 
   const CONTROVERSY_COLORS = ["", "#888", "#ffb800", "#ff8800", "#ff4400", "#ff2222"];
 
-  // ── STEP 1: SELECT HOSTS ──
+  // ── STEP 1: SELECT HOSTS ──────────────────────
   if (step === "select-hosts") return (
     <div className="show-page">
       <div className="show-setup-header">
         <h2 className="show-setup-title">PICK YOUR HOSTS</h2>
         <p className="show-setup-sub">Choose 2 hosts for tonight's show</p>
       </div>
-
       <div className="show-groups">
         <div className="show-group">
           <div className="show-group__label">🏆 TOP GEAR</div>
@@ -181,13 +280,12 @@ export default function ShowPage() {
           </div>
         </div>
       </div>
-
       {selectedHosts.length === 2 && (
         <div className="show-selected-preview">
           <span className="show-selected-names">
             {HOSTS[selectedHosts[0]].name} <span style={{ color: "var(--text-muted)" }}>vs</span> {HOSTS[selectedHosts[1]].name}
           </span>
-          <button className="btn btn--primary" onClick={goToTopics}>PICK A TOPIC →</button>
+          <button className="btn btn--primary" onClick={() => setStep("select-topic")}>PICK A TOPIC →</button>
         </div>
       )}
       {selectedHosts.length < 2 && (
@@ -196,7 +294,7 @@ export default function ShowPage() {
     </div>
   );
 
-  // ── STEP 2: SELECT TOPIC ──
+  // ── STEP 2: SELECT TOPIC ──────────────────────
   if (step === "select-topic") return (
     <div className="show-page">
       <div className="show-setup-header">
@@ -211,7 +309,6 @@ export default function ShowPage() {
           </button>
         </div>
       </div>
-
       <div className="show-hosts-preview">
         {selectedHosts.map(id => {
           const h = HOSTS[id];
@@ -224,7 +321,6 @@ export default function ShowPage() {
           );
         })}
       </div>
-
       <div className="topic-list">
         {topics.map(topic => (
           <button key={topic.id} className="topic-item" onClick={() => goOnAir(topic)}>
@@ -248,7 +344,7 @@ export default function ShowPage() {
     </div>
   );
 
-  // ── STEP 3: LIVE SHOW ──
+  // ── STEP 3: LIVE SHOW ─────────────────────────
   return (
     <div className="show-page">
       <div className="show-live__header">
@@ -257,27 +353,41 @@ export default function ShowPage() {
           <span className="show-live__topic-title">{activeTopic?.title}</span>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <button className="btn btn--ghost" onClick={() => { setStep("select-topic"); setConversation([]); }}>← TOPICS</button>
-          <button className="btn btn--ghost" onClick={() => { setStep("select-hosts"); setConversation([]); setSelectedHosts([]); }}>← HOSTS</button>
+          <button className="btn btn--ghost" onClick={() => { setStep("select-topic"); setConversation([]); setReplyTarget(null); }}>← TOPICS</button>
+          <button className="btn btn--ghost" onClick={() => { setStep("select-hosts"); setConversation([]); setSelectedHosts([]); setReplyTarget(null); }}>← HOSTS</button>
         </div>
       </div>
 
-      {ollamaError && (
+      {agentError && (
         <div className="ollama-error">
-          <span>⚠ {ollamaError}</span>
-          <button className="btn btn--ghost" style={{ fontSize: "0.7rem", padding: "4px 10px" }} onClick={() => setOllamaError(null)}>DISMISS</button>
+          <span>⚠ {agentError}</span>
+          <button className="btn btn--ghost" style={{ fontSize: "0.7rem", padding: "4px 10px" }} onClick={() => setAgentError(null)}>DISMISS</button>
         </div>
       )}
 
+      {/* Chat log */}
       <div className="chat-log" ref={chatRef}>
         {conversation.map((msg, i) => (
           msg.host === "viewer" ? (
-            <div key={i} className="viewer-message">
-              <span className="viewer-message__label">VIEWER</span>
-              <span className="viewer-message__text">"{msg.text}"</span>
+            <div key={i} className={`viewer-message viewer-message--${msg.targetHost === "both" ? "both" : "direct"}`}>
+              <div className="viewer-message__left">
+                <span className="viewer-message__label">
+                  {msg.targetHost === "both" ? "YOU ASKED" : `YOU → ${HOSTS[msg.targetHost]?.name?.split(" ")[0] || "HOST"}`}
+                </span>
+                <span className="viewer-message__text">"{msg.text}"</span>
+              </div>
             </div>
           ) : (
-            <ChatBubble key={i} message={msg} />
+            <ChatBubble
+              key={i}
+              message={msg}
+              onReplyTo={setReplyTarget}
+              replyTarget={replyTarget}
+              loading={loading}
+              selectedHosts={selectedHosts}
+              topic={activeTopic?.title}
+              onReplySubmit={handleDirectReply}
+            />
           )
         ))}
         {loading && (
@@ -286,22 +396,25 @@ export default function ShowPage() {
             <span className="chat-typing__label">Host is thinking...</span>
           </div>
         )}
-        {conversation.length === 0 && !loading && !ollamaError && (
+        {conversation.length === 0 && !loading && !agentError && (
           <div className="chat-empty">Starting the show...</div>
         )}
       </div>
 
+      {/* Bottom controls — general input + continue */}
       <div className="show-controls">
         <div className="viewer-input-row">
           <input
             className="viewer-input"
-            placeholder="Ask the hosts a question..."
+            placeholder="Ask both hosts a question..."
             value={viewerInput}
             onChange={e => setViewerInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleViewerQuestion()}
+            onKeyDown={e => e.key === "Enter" && handleGeneralQuestion()}
             disabled={loading}
           />
-          <button className="btn btn--primary" onClick={handleViewerQuestion} disabled={loading || !viewerInput.trim()}>ASK</button>
+          <button className="btn btn--primary" onClick={handleGeneralQuestion} disabled={loading || !viewerInput.trim()}>
+            ASK BOTH
+          </button>
         </div>
         <button className="btn btn--ghost continue-btn" onClick={handleContinue} disabled={loading || conversation.length === 0}>
           {loading ? "..." : "▶ CONTINUE"}
