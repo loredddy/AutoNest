@@ -1,5 +1,5 @@
 // ── TrendingPage.jsx ──────────────────────────
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { fetchTrending } from "../../agents/autoAgent";
 import { useAutoRefresh } from "../../hooks/useAutoRefresh";
 import "./TrendingPage.css";

@@ -71,12 +71,6 @@ export default function HomePage({ onNavigate }) {
     }
   };
 
-  const formatMentions = (n) => {
-    if (!n) return "—";
-    if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
-    return n;
-  };
-
   return (
     <div className="home-page">
 

@@ -11,13 +11,6 @@ const TABS = [
   { id: "classic", label: "Classic",      query: YT_QUERIES.classic },
 ];
 
-function formatViews(n) {
-  if (!n) return "";
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M views`;
-  if (n >= 1000) return `${(n / 1000).toFixed(0)}K views`;
-  return `${n} views`;
-}
-
 function timeAgo(iso) {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -107,7 +100,7 @@ export default function VideoPage() {
     }
   };
 
-  useEffect(() => { loadVideos(activeTab); }, []);
+  useEffect(() => { loadVideos(activeTab); }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTab = (tab) => {
     setActiveTab(tab);
