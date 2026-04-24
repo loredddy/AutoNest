@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { checkOllamaStatus } from "../../agents/ollamaAgent";
-import logo from "../../assets/AN_L.png";
+import logo from "../../assets/icons/AN_big.png";
 import "./Sidebar.css";
 
 const NAV_ITEMS = [
