@@ -5,11 +5,11 @@ import "./Sidebar.css";
 
 const NAV_ITEMS = [
   { id: "home",        label: "Pit Lane",   icon: "⬡", description: "Home Base" },
-  { id: "news",        label: "Dispatch",   icon: "◈", description: "Latest News" },
-  { id: "show",        label: "The Garage", icon: "◉", description: "Live Show", badge: "LIVE" },
-  { id: "videos",      label: "Garage TV",  icon: "▶", description: "YouTube Feed" },
-  { id: "trending",    label: "Heat Map",   icon: "▲", description: "Trending" },
-  { id: "discussions", label: "Paddock",    icon: "◎", description: "Discussions" },
+  { id: "news",        label: "Dispatch",   icon: "⬡", description: "Latest News" },
+  { id: "show",        label: "The Garage", icon: "⬡", description: "Live Show", badge: "LIVE" },
+  { id: "videos",      label: "Garage TV",  icon: "⬡", description: "YouTube Feed" },
+  { id: "trending",    label: "Heat Map",   icon: "⬡", description: "Trending" },
+  { id: "discussions", label: "Paddock",    icon: "⬡", description: "Discussions" },
 ];
 
 const CATEGORIES = [
@@ -40,7 +40,7 @@ export default function Sidebar({ activePage, onNavigate }) {
         <img src={logo} alt="AutoNest Logo" className="sidebar__logo-img" />
         <div className="sidebar__logo-text">
           <span className="sidebar__logo-name">AutoNest</span>
-          <span className="sidebar__logo-tagline">EST. 2025</span>
+          <span className="sidebar__logo-tagline">Ai Automobile Enthusiasts</span>
         </div>
       </div>
 
