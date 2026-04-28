@@ -20,7 +20,7 @@ const CATEGORIES = [
   { label: "Industry",     color: "#c0c0c0" },
 ];
 
-export default function Sidebar({ activePage, onNavigate }) {
+export default function Sidebar({ activePage, activeCategory, onNavigate, onCategoryClick }) {
   const [ollamaStatus, setOllamaStatus] = useState({ online: false, hasModel: false });
   const isLocal = window.location.hostname === "localhost";
 
@@ -65,9 +65,15 @@ export default function Sidebar({ activePage, onNavigate }) {
       <div className="sidebar__section">
         <div className="sidebar__nav-label">CATEGORIES</div>
         {CATEGORIES.map(cat => (
-          <button key={cat.label} className="sidebar__category">
+          <button
+            key={cat.label}
+            className={`sidebar__category sidebar__category--link ${activeCategory === cat.label ? "sidebar__category--active" : ""}`}
+            onClick={() => onCategoryClick(cat.label)}
+            style={{ color: activeCategory === cat.label ? cat.color : undefined }}
+          >
             <span className="sidebar__category-dot" style={{ background: cat.color }} />
             {cat.label}
+            <span className="sidebar__category-arrow">›</span>
           </button>
         ))}
       </div>

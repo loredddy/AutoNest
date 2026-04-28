@@ -17,4 +17,3 @@ dist/
 *.log
 npm-debug.log*
 .vercel
-api/chat.js

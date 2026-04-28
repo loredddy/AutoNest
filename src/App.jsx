@@ -8,6 +8,7 @@ import Header from "./components/layout/Header";
 import TickerBar from "./components/shared/TickerBar";
 
 import HomePage from "./pages/HomePage";
+import CategoryPage from "./pages/CategoryPage";
 import NewsPage from "./components/news/NewsPage";
 import ShowPage from "./components/show/ShowPage";
 import TrendingPage from "./components/trending/TrendingPage";
@@ -25,17 +26,37 @@ const PAGES = {
 
 export default function App() {
   const [activePage, setActivePage] = useState("home");
+  const [activeCategory, setActiveCategory] = useState(null);
 
-  const PageComponent = PAGES[activePage] || HomePage;
+  const handleNavigate = (page) => {
+    setActiveCategory(null);
+    setActivePage(page);
+  };
+
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category);
+    setActivePage("category");
+  };
+
+  const PageComponent = PAGES[activePage];
 
   return (
     <div className="app-shell">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <Sidebar
+        activePage={activePage}
+        activeCategory={activeCategory}
+        onNavigate={handleNavigate}
+        onCategoryClick={handleCategoryClick}
+      />
       <div className="app-main">
-        <Header activePage={activePage} />
+        <Header activePage={activePage} activeCategory={activeCategory} />
         <TickerBar />
         <main className="app-content">
-          <PageComponent onNavigate={setActivePage} />
+          {activePage === "category" && activeCategory ? (
+            <CategoryPage category={activeCategory} onNavigate={handleNavigate} />
+          ) : PageComponent ? (
+            <PageComponent onNavigate={handleNavigate} />
+          ) : null}
         </main>
       </div>
     </div>

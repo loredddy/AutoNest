@@ -10,9 +10,11 @@ const PAGE_TITLES = {
   discussions: { title: "THE PADDOCK", sub: "Community debates & builds" },
 };
 
-export default function Header({ activePage }) {
+export default function Header({ activePage, activeCategory }) {
   const [time, setTime] = useState(new Date());
-  const page = PAGE_TITLES[activePage] || PAGE_TITLES.home;
+  const page = activePage === "category" && activeCategory
+    ? { title: activeCategory.toUpperCase(), sub: "Category feed" }
+    : (PAGE_TITLES[activePage] || PAGE_TITLES.home);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);

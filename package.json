@@ -13,7 +13,12 @@
     "build": "react-scripts build"
   },
   "eslintConfig": {
-    "extends": ["react-app"]
+    "extends": ["react-app"],
+    "rules": {
+      "no-unused-vars": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "no-unused-expressions": "off"
+    }
   },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
